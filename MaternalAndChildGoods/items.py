@@ -14,7 +14,7 @@ class Text(scrapy.Item):
     cls_tag = scrapy.Field()
     time = scrapy.Field()
     text = scrapy.Field()
-    user_name = scrapy.Field()
+    topic = scrapy.Field()
     follower_cnt = scrapy.Field()
     top_cnt = scrapy.Field()
 
