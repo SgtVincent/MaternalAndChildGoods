@@ -7,6 +7,8 @@
 
 import sqlite3 
 import requests
+import re
+import os
 
 class MaternalandchildgoodsPipeline(object):
 
@@ -30,7 +32,8 @@ class MaternalandchildgoodsPipeline(object):
                 time DATETIME,
                 src TEXT,
                 title TEXT,
-                bin TEXT
+                bin TEXT,
+                type TEXT
             );
         ''')
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS
@@ -69,26 +72,33 @@ class MaternalandchildgoodsPipeline(object):
                     'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36'
                 }
                 url = item['src']
+                #get img file type by parsing url 
+                type = url.split('.')[-1]
+
                 # handle corner case like "//baidu.com" 
                 if not url.startswith('http'):
                     url = 'http:'+url
 
-                request = requests.get(item['src'], headers=headers)
+                request = requests.get(url, headers=headers)
                 
-                insert_sql = "INSERT INTO Image VALUES (?,?,?,?)"
+                insert_sql = "INSERT INTO Image VALUES (?,?,?,?,?)"
                 # time, src, title, bin
 
                 insert_values = [
                     item.get('time'),
-                    item.get('src'),
+                    url,
                     item.get('title'),
-                    request.content
+                    request.content,
+                    type
                 ]
                 # insert values into DB
                 self.cursor.execute(insert_sql,insert_values)
             except Exception as e:
-                print(e)
-                print("Error in processing ImageUrl item")
+                raise Exception
+                #DEBUG
+                os.system("pause")
+
+
 
         elif item['cls_tag'] == 2:
             insert_sql = "INSERT INTO Topic VALUES(?,?,?,?,?,?)"

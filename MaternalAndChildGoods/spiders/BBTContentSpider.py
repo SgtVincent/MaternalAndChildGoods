@@ -6,10 +6,10 @@ from MaternalAndChildGoods.items import Text
 class BBTContentSpider(scrapy.Spider):
     name = "BBTContentSpider"
     # once <item_limit> items are collected, the spider closes
-    item_limit = 1000
+    item_limit = 100
     item_count = 0
     # only url under <allowed_domains> will be scrapeds
-    allowed_domains = ['http://www.babytree.com']
+    allowed_domains = ['www.babytree.com']
     # This is the list of starting websites
 
     def start_requests(self):
@@ -29,12 +29,14 @@ class BBTContentSpider(scrapy.Spider):
 
     # parse forum index page  
     def parse_index(self, response):
-
+        # limit num of requests
+        if self.item_count >= self.item_limit:
+            return 
         # generate a selector
         selector = scrapy.Selector(response)
 
         # extract all posts' links in one index page and generate requests
-        for topic_line in selector.xpath('//table[@class="groupForum"]//tr'):
+        for topic_line in selector.xpath('//table[@class="groupForum"]/tbody/tr'):
             try:
                 post_link = topic_line.xpath('td[@class="topicTitle"]/span/a/@href').extract_first()
                 yield response.follow(post_link, callback=self.parse_post)
@@ -45,11 +47,15 @@ class BBTContentSpider(scrapy.Spider):
         # extract next index page's request
         next_page = selector.xpath('//div[@class="pagejump"]/a[contains(text(),"下一页")]/@href').extract_first()
 
-        if next_page is not None:
+        if next_page is not None :
             yield response.follow(next_page, callback=self.parse_index)
 
         # parse one post page in the forum
     def parse_post(self, response):
+
+        # limit the scraped pages
+        if self.item_count >= self.item_limit:
+            return None
 
         # generate a selector
         selector = scrapy.Selector(response)
@@ -61,7 +67,7 @@ class BBTContentSpider(scrapy.Spider):
         # 1. text of every single post/reply
         # 2. informative pictures in a single post (emoji excluded)
         for post in selector.xpath('//div[@class="clubTopicSinglePost"]'):
-
+            
             # extract one text item
             text = Text()
             text['cls_tag'] = 0
